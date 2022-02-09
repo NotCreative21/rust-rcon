@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2, actions/cache@v2.1.7
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2.1.7
       with:
         path: |
           ~/.cargo/bin/
@@ -30,7 +31,8 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2, actions/cache@v2.1.7
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2.1.7
       with:
         path: |
           ~/.cargo/bin/
@@ -46,7 +48,8 @@ jobs:
   macos:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2, actions/cache@v2.1.7
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2.1.7
       with:
         path: |
           ~/.cargo/bin/
