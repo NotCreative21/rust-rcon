@@ -26,11 +26,11 @@ impl StdError for Error {
         match *self {
             Error::Auth => "authentication failed",
             Error::CommandTooLong => "command exceeds the maximum length",
-            Error::Io(ref err) => err.description(),
+            Error::Io(_) => "unable to send"
         }
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             Error::Io(ref err) => Some(err),
             _ => None,
@@ -42,7 +42,7 @@ impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::Io(ref err) => write!(fmt, "IO error: {}", err),
-            _ => write!(fmt, "{}", self.description()),
+            _ => write!(fmt, "{}", self.to_string()),
         }
     }
 }

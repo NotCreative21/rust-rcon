@@ -30,35 +30,37 @@ const INITIAL_PACKET_ID: i32 = 1;
 
 impl Connection {
     pub fn connect<T: ToSocketAddrs>(address: T, password: &str) -> Result<Connection> {
-        let tcp_stream = try!(TcpStream::connect(address));
+        let tcp_stream = TcpStream::connect(address)?;
         let mut conn = Connection {
             stream: BufStream::new(tcp_stream),
             next_packet_id: INITIAL_PACKET_ID,
         };
 
-        try!(conn.auth(password));
+        conn.auth(password)?;
 
         Ok(conn)
     }
 
-    pub fn cmd(&mut self, cmd: &str) -> Result<String> {
-        // Minecraft only supports a request payload length of max 1446 byte.
-        // However some tests showed that only requests with a payload length
-        // of 1413 byte or lower work reliable.
-        if cmd.len() > 1413 {
-            return Err(Error::CommandTooLong);
-        }
+    pub fn cmd(&mut self, cmd: &str) -> Result<i32> {
+        Connection::check_len(cmd.len());
 
-        try!(self.send(PacketType::ExecCommand, cmd));
+        Ok(self.send(PacketType::ExecCommand, cmd)?)
+    }
+
+
+    pub fn response(&mut self, cmd: &str) -> Result<String> {
+        Connection::check_len(cmd.len());
+
+        self.send(PacketType::ExecCommand, cmd)?;
 
         // the server processes packets in order, so send an empty packet and
         // remember its id to detect the end of a multi-packet response
-        let end_id = try!(self.send(PacketType::ExecCommand, ""));
+        let end_id = self.send(PacketType::ExecCommand, "")?;
 
         let mut result = String::new();
 
         loop {
-            let received_packet = try!(self.recv());
+            let received_packet = self.recv()?;
 
             if received_packet.get_id() == end_id {
                 // This is the response to the end-marker packet
@@ -71,9 +73,19 @@ impl Connection {
         Ok(result)
     }
 
+    fn check_len(length: usize) -> Option<Result<String>> {
+        // Minecraft only supports a request payload length of max 1446 byte.
+        // However some tests showed that only requests with a payload length
+        // of 1413 byte or lower work reliable.
+        if length > 1413 {
+            return Some(Err(Error::CommandTooLong));
+        }
+        None
+    }
+
     fn auth(&mut self, password: &str) -> Result<()> {
-        try!(self.send(PacketType::Auth, password));
-        let received_packet = try!(self.recv());
+        self.send(PacketType::Auth, password)?;
+        let received_packet = self.recv()?;
 
         if received_packet.is_error() {
             Err(Error::Auth)
@@ -86,7 +98,7 @@ impl Connection {
         let id = self.generate_packet_id();
 
         let packet = Packet::new(id, ptype, body.into());
-        try!(packet.serialize(&mut self.stream));
+        packet.serialize(&mut self.stream)?;
 
         Ok(id)
     }

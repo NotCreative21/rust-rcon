@@ -25,6 +25,6 @@ fn main() {
 }
 
 fn demo(conn: &mut rcon::Connection, cmd: &str) {
-    let resp = conn.cmd(cmd).unwrap();
+    let resp = conn.response(cmd).unwrap();
     println!("{}", resp);
 }
